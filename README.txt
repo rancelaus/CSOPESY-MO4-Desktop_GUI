@@ -1,1 +1,1 @@
-g++ -std=c++17 main.cpp imgui/imgui.cpp imgui/imgui_draw.cpp imgui/imgui_tables.cpp imgui/imgui_widgets.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl3.cpp -I. -Iimgui -Iimgui/backends -Iglfw/include -Lglfw/lib-mingw-w64 -lglfw3 -lopengl32 -lgdi32 -o main.exe
+run build.bat
