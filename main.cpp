@@ -9,6 +9,9 @@
 #include "imgui/backends/imgui_impl_glfw.h"
 #include "imgui/backends/imgui_impl_opengl3.h"
 
+// Desktop UI
+#include "DesktopUI.h"
+
 // Image Loading (STB Image)
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -55,10 +58,12 @@ int main() {
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // enable VSync
 
-    // Setup ImGui
+    // Setup ImGui & Desktop UI
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGui::StyleColorsDark();
+    DesktopUI desktopUI;
+    desktopUI.Initialize();
+
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 130");
 
@@ -66,9 +71,10 @@ int main() {
     GLuint wallpaperTexture = LoadTextureFromFile("wallpaper.jpg");
 
     // UI Window Toggles
-    bool showStartMenu   = false;
-    bool showExplorer    = false;
-    bool showTaskManager = false;
+    bool showExplorer       = false;
+    bool showTaskManager    = false;
+    bool showAboutWindow    = false;
+    bool showCalendarWindow = false;
 
     // Main Loop
     while (!glfwWindowShouldClose(window)) {
@@ -80,74 +86,25 @@ int main() {
 
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
-        float screenW = (float)display_w;
-        float screenH = (float)display_h;
 
-        // Desktop Wallpaper Rendering
-        ImDrawList* bgList = ImGui::GetBackgroundDrawList();
-        if (wallpaperTexture != 0) {
-            bgList->AddImage((ImTextureID)(intptr_t)wallpaperTexture, ImVec2(0, 0), ImVec2(screenW, screenH));
-        } else {
-            // Blue fallback background if wallpaper.jpg is missing
-            bgList->AddRectFilled(ImVec2(0, 0), ImVec2(screenW, screenH), IM_COL32(30, 80, 150, 255));
-        }
+        // Render Desktop Background, Taskbar, and Start Menu
+        bool shutdownRequested = desktopUI.Render(
+            (ImTextureID)(intptr_t)wallpaperTexture,
+            showExplorer,
+            showTaskManager,
+            showAboutWindow,
+            showCalendarWindow
+        );
 
-        // Taskbar Rendering at Bottom of Screen
-        float barHeight = 45.0f;
-        ImGui::SetNextWindowPos(ImVec2(0, screenH - barHeight));
-        ImGui::SetNextWindowSize(ImVec2(screenW, barHeight));
-
-        ImGuiWindowFlags barFlags = ImGuiWindowFlags_NoTitleBar | 
-                                    ImGuiWindowFlags_NoResize   | 
-                                    ImGuiWindowFlags_NoMove;
-
-        ImGui::Begin("Taskbar", nullptr, barFlags);
-
-        // 3 Clickable Buttons on Taskbar (Start, Explorer, Task Manager)
-        if (ImGui::Button("Start", ImVec2(60, 28)))        showStartMenu = !showStartMenu;
-        ImGui::SameLine();
-        if (ImGui::Button("Explorer", ImVec2(75, 28)))     showExplorer = !showExplorer;
-        ImGui::SameLine();
-        if (ImGui::Button("Task Manager", ImVec2(100, 28))) showTaskManager = !showTaskManager;
-
-        // Real-Time Clock (Updated every frame)
-        std::time_t now = std::time(nullptr);
-        char timeText[64];
-        std::strftime(timeText, sizeof(timeText), "%a %b %d, %Y  %I:%M:%S %p", std::localtime(&now));
-
-        ImGui::SameLine(screenW - 320.0f);
-        ImGui::Text("%s", timeText);
-
-        // PWR (Shutdown) Button - Exits the Application
-        ImGui::SameLine();
-        if (ImGui::Button("PWR", ImVec2(45, 24))) {
+        if (shutdownRequested) {
             glfwSetWindowShouldClose(window, GLFW_TRUE); // Clean shutdown
         }
 
-        ImGui::End();
-
-        // UI SCREEN 1: Start Menu
-        if (showStartMenu) {
-            ImGui::SetNextWindowPos(ImVec2(5, screenH - barHeight - 260));
-            ImGui::SetNextWindowSize(ImVec2(220, 250));
-
-            if (ImGui::Begin("Start Menu", &showStartMenu)) {
-                ImGui::Text("CSOPESY OS v1.0");
-                ImGui::Separator();
-                if (ImGui::Selectable("Open File Explorer")) showExplorer = true;
-                if (ImGui::Selectable("Open Task Manager")) showTaskManager = true;
-                ImGui::Separator();
-                if (ImGui::Button("Shutdown System", ImVec2(-1, 28))) {
-                    glfwSetWindowShouldClose(window, GLFW_TRUE);
-                }
-            }
-            ImGui::End();
-        }
-
-        // UI SCREEN 2: File Explorer Window (Dummy File Structure)
+        // UI SCREEN 1: File Explorer Window (Dummy File Structure)
         if (showExplorer) {
-            ImGui::SetNextWindowSize(ImVec2(400, 250), ImGuiCond_FirstUseEver);
+            desktopUI.PrepareAppWindow("File Explorer", ImVec2(400, 250));
             if (ImGui::Begin("File Explorer", &showExplorer)) {
+                desktopUI.KeepAppInWorkArea();
                 ImGui::Text("Local Disk (C:)");
                 ImGui::Separator();
                 ImGui::BulletText("Documents");
@@ -157,10 +114,11 @@ int main() {
             ImGui::End();
         }
 
-        // UI SCREEN 3: Task Manager Window (Dummy Process List)
+        // UI SCREEN 2: Task Manager Window (Dummy Process List)
         if (showTaskManager) {
-            ImGui::SetNextWindowSize(ImVec2(450, 280), ImGuiCond_FirstUseEver);
+            desktopUI.PrepareAppWindow("Task Manager", ImVec2(450, 280));
             if (ImGui::Begin("Task Manager", &showTaskManager)) {
+                desktopUI.KeepAppInWorkArea();
                 if (ImGui::BeginTable("ProcTable", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
                     ImGui::TableSetupColumn("Process Name");
                     ImGui::TableSetupColumn("PID");
@@ -180,6 +138,12 @@ int main() {
             }
             ImGui::End();
         }
+
+        // UI SCREEN 3: About My PC Window
+        desktopUI.RenderAboutMyPCWindow(showAboutWindow);
+
+        // UI SCREEN 4: Calendar Window
+        desktopUI.RenderCalendarWindow(showCalendarWindow);
 
         // Rendering Pipeline
         ImGui::Render();
