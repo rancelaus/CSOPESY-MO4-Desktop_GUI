@@ -232,6 +232,8 @@ bool DesktopUI::Render(ImTextureID wallpaper, bool &showExplorer,
     if (ImGui::Selectable("Open Calendar", false, 0, ImVec2(0, 30)))
       Launch("Calendar", showCalendarWindow);
     ImGui::Separator();
+    if (ImGui::Selectable("Restart System", false, 0, ImVec2(0, 30)))
+      restartRequested = true;
     if (ImGui::Selectable("Shutdown System", false, 0, ImVec2(0, 30)))
       shutdown = true;
     ImGui::EndPopup();

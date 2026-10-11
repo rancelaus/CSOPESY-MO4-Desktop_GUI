@@ -5,6 +5,8 @@
 
 class DesktopUI {
 public:
+    bool restartRequested = false;
+
     void Initialize();
     bool Render(ImTextureID wallpaper, bool& showExplorer, bool& showTaskManager);
     bool Render(ImTextureID wallpaper, bool& showExplorer, bool& showTaskManager, bool& showAboutWindow, bool& showCalendarWindow);
