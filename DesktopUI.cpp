@@ -281,7 +281,7 @@ void DesktopUI::RenderAboutMyPCWindow(bool &showAboutWindow) {
         ImGui::TextUnformatted(val);
       };
 
-      renderSpecRow("OS Name / Version:", "Grp8 OS");
+      renderSpecRow("OS Name / Version:", "Chongqing Grp8 OS");
       renderSpecRow("Processor:", "AMD Ryzen 7 5700X3D");
       renderSpecRow("Installed RAM:", "64 GB");
       renderSpecRow("Graphics:", "AMD Radeon RX 7600XT");
