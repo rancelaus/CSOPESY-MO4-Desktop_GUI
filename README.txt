@@ -6,7 +6,6 @@ Aaron Zander Romero
 Ezekiel Tiangson
 Luis Andre Vito
 
-
 Instructions:
 run build.bat
 
